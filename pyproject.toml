@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paprika-mcp"
+version = "0.1.0"
+description = "MCP server for Paprika Recipe Manager with AI-generated food photography using Flux"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    {name = "Sandor Daroczi"}
+]
+keywords = ["mcp", "paprika", "recipe", "ai", "flux", "model-context-protocol"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Home Automation",
+]
+
+dependencies = [
+    "mcp>=1.15.0",
+    "aiohttp>=3.12.0",
+    "pydantic>=2.11.0",
+    "python-dotenv>=1.1.0",
+    "replicate>=0.22.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/sandordaroczi/paprika-mcp-python-server"
+Repository = "https://github.com/sandordaroczi/paprika-mcp-python-server"
+Issues = "https://github.com/sandordaroczi/paprika-mcp-python-server/issues"
+
+[project.scripts]
+paprika-mcp = "paprika_mcp_server.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["paprika_mcp_server*"]
+
+[tool.setuptools.package-data]
+paprika_mcp_server = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]  # Line too long (handled by formatter)
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"

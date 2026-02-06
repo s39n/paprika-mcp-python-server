@@ -51,3 +51,8 @@ logs/
 .coverage
 .pytest_cache/
 htmlcov/
+
+CLAUDE.md
+AGENTS.md
+openspec/
+.claude/

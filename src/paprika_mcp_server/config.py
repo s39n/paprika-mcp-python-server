@@ -15,6 +15,7 @@ class Config:
 
     paprika_username: str
     paprika_password: str
+    replicate_api_token: Optional[str] = None
 
 
 def get_config() -> Config:
@@ -65,7 +66,14 @@ def get_config() -> Config:
         )
         sys.exit(1)
 
-    return Config(paprika_username=username, paprika_password=password)
+    # Optional: Replicate API token for AI image generation
+    replicate_token = os.environ.get("REPLICATE_API_TOKEN")
+
+    return Config(
+        paprika_username=username,
+        paprika_password=password,
+        replicate_api_token=replicate_token
+    )
 
 
 def _prompt_for_input(prompt: str, secret: bool = False) -> Optional[str]:

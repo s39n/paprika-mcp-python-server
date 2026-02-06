@@ -1,215 +1,289 @@
-# Paprika MCP Python Server
+# 🌶️ Paprika MCP Server
 
-A Model Context Protocol (MCP) server that integrates Paprika Recipe Manager with Claude Desktop, enabling natural language recipe management through AI conversation.
+A [Model Context Protocol](https://modelcontextprotocol.io/) server that lets you talk to [Paprika Recipe Manager](https://www.paprikaapp.com/) through Claude Desktop. Just chat naturally to add recipes, find that thing you made last week, or update cooking times.
 
-## Features
+Oh, and it can generate food photos for your recipes too (using Flux from Black Forest Lab) if you want them to look fancy.
 
-- **Recipe Creation**: Create new recipes with natural language descriptions
-- **Recipe Updates**: Full and partial recipe updates while preserving existing data
-- **Recipe Listing**: Browse all recipes with complete ingredient lists and details
+![Creating recipes with natural language](images/demo-create-recipe.png)
 
-## Demo
+## What it does
 
-### Creating Recipes
-![Creating a recipe with natural language](images/demo-create-recipe.png)
-
-### Recipe Recommendations  
-![Getting recipe recommendations](images/demo-list-recipes.png)
-
-## Prerequisites
-
-- Python 3.8 or higher
-- [Paprika Recipe Manager 3](https://www.paprikaapp.com/) with cloud sync enabled
-- [Claude Desktop](https://claude.ai/download) application
-- Valid Paprika account credentials
+- **Just talk to add recipes** - No forms, no clicking around. Describe it and it's saved
+- **AI food photos** - Automatically generates images with Flux (~$0.002/image, totally optional)
+- **Find stuff fast** - Search by ingredient, cooking time, or just random words you remember
+- **Update anything** - Change one field or rewrite the whole thing
+- **Syncs everywhere** - Everything updates in your Paprika apps automatically, you see the same thing on your computer, phone, or tablet.
 
 ## Quick Start
 
-### 1. Installation
+### What you need
+
+- Python 3.8+ (probably already have it)
+- [Paprika Recipe Manager](https://www.paprikaapp.com/) with cloud sync turned on
+- [Claude Desktop](https://claude.ai/download), [Claude Code](https://docs.claude.ai/docs/claude-code), or any other MCP client
+
+### Installation
+
+Two commands and you're done:
 
 ```bash
-# Clone the repository
-git clone https://github.com/sandordaroczi/paprika-mcp-python-server.git
-cd paprika-mcp-python-server
-
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+pipx install paprika-mcp
+paprika-mcp setup
 ```
 
-### 2. Configuration
+The setup wizard will ask for your Paprika login, find your MCP clients (Claude Desktop, Claude Code, etc.), and configure everything automatically.
 
-Copy the example environment file and configure your credentials:
+That's it. Restart your MCP client and you're ready to go.
 
+### Manual setup (if you prefer)
+
+If you want to configure things yourself:
+
+**Install:**
 ```bash
-cp .env.example .env
+pipx install paprika-mcp
 ```
 
-Edit `.env` with your Paprika credentials:
-```env
-PAPRIKA_USERNAME=your_email@example.com
-PAPRIKA_PASSWORD=your_paprika_password
-```
-
-### 3. Test the Server
-
-Verify your setup by testing authentication:
-
-```bash
-python src/server.py --username your_email --password your_password
-```
-
-### 4. Configure Claude Desktop
-
-Edit your Claude Desktop configuration file:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
-Add the MCP server configuration:
+**Configure Claude Desktop** - Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
   "mcpServers": {
     "paprika": {
-      "command": "/path/to/your/venv/bin/python",
-      "args": ["/path/to/paprika-mcp-python-server/src/server.py"],
+      "command": "pipx",
+      "args": ["run", "paprika-mcp"],
       "env": {
         "PAPRIKA_USERNAME": "your_email@example.com",
-        "PAPRIKA_PASSWORD": "your_password"
+        "PAPRIKA_PASSWORD": "your_password",
+        "REPLICATE_API_TOKEN": "optional_token_for_images"
       }
     }
   }
 }
 ```
 
-**Important**: Use absolute paths and ensure you're pointing to your virtual environment's Python interpreter.
+**Other MCP clients** (Claude Code, VS Code, Cursor, etc.) use the same config structure, just different file locations.
 
-### 5. Restart Claude Desktop
+Restart your MCP client (full quit and reopen).
 
-Completely quit and restart Claude Desktop for the changes to take effect.
+## How to use it
 
-## Usage Examples
+Just talk to Claude like you're texting a friend about recipes:
 
-Once configured, you can interact with your Paprika recipes through natural language in Claude:
-
-### Create a New Recipe
+**Create recipes:**
 ```
-Create a new recipe called "Spaghetti Carbonara" with these ingredients:
-- 400g spaghetti
-- 4 large eggs
-- 100g pancetta
-- 50g Parmesan cheese
-- Black pepper and salt
+Create a Spaghetti Carbonara recipe with:
+- 400g spaghetti, 4 eggs, 100g pancetta, 50g Parmesan, black pepper
 
 Instructions:
-1. Cook spaghetti according to package directions
-2. Fry pancetta until crispy
-3. Beat eggs with Parmesan
-4. Combine hot pasta with pancetta
-5. Add egg mixture and toss quickly
-6. Season and serve immediately
+1. Cook pasta, fry pancetta until crispy
+2. Beat eggs with Parmesan
+3. Mix hot pasta with pancetta, add eggs off heat
+4. Season and serve
 
-Set servings to 4 people, prep time 10 minutes, cook time 15 minutes.
+Servings: 4, Prep: 10 mins, Cook: 15 mins
 ```
 
-### List Your Recipes
+**Search and filter:**
 ```
-Show me all my recipes from Paprika
-```
-
-### Update a Recipe
-```
-Update the Spaghetti Carbonara recipe to serve 6 people instead of 4, and add "Use room temperature eggs to prevent scrambling" to the notes.
+Show me all pasta recipes sorted by prep time
+Find recipes with chicken and tomatoes
+What can I make in under 30 minutes?
 ```
 
-### Partial Updates
+**Update recipes:**
 ```
-For the recipe with UID [recipe-uid], just change the prep time to 15 minutes and add salt to the ingredients list.
+Change the Carbonara recipe to serve 6 people
+Add "Use room temperature eggs" to the notes
+Update just the prep time to 15 minutes
 ```
+
+**Regenerate images:**
+```
+Regenerate the Carbonara image with rustic style and darker lighting
+Create a new photo with close-up view and more cheese visible
+```
+
+## CLI Commands
+
+Besides running as an MCP server, there are some handy commands:
+
+```bash
+# Run the MCP server (this happens automatically when MCP clients call it)
+paprika-mcp
+
+# Interactive setup wizard
+paprika-mcp setup
+
+# Reconfigure your credentials
+paprika-mcp config
+
+# Test if your Paprika login works
+paprika-mcp test
+
+# See recent logs from Claude Desktop
+paprika-mcp logs
+
+# Show version
+paprika-mcp version
+```
+
+## AI Image Generation
+
+By default, new recipes get an AI-generated photo using [Flux](https://blackforestlabs.ai/flux-1-tools/) from Black Forest Lab (via [Replicate](https://replicate.com)). You'll need a Replicate account and API token.
+
+**Setup:**
+1. Make an account at [replicate.com](https://replicate.com)
+2. Grab your API token from [replicate.com/account/api-tokens](https://replicate.com/account/api-tokens)
+3. Add `REPLICATE_API_TOKEN` to your Claude Desktop config (see above)
+
+**Cost:** Around $0.002 per image (pretty cheap)
+
+**Don't want images?**
+```
+Create a recipe without generating an image
+```
+
+**Make it look better:**
+```
+Regenerate image for "Pasta Carbonara" with: overhead view, rustic style, darker background
+```
+
+## Works with Multiple MCP Clients
+
+This server works with any MCP-compatible client, not just Claude Desktop:
+
+- **Claude Desktop** - The desktop app
+- **Claude Code** - CLI tool for coding projects
+- **VS Code** - With the MCP extension
+- **Cursor** - AI code editor
+- **Windsurf** - Another AI editor
+- **Goose** - Terminal-based AI assistant
+- Any other tool that supports MCP
+
+The setup wizard (`paprika-mcp setup`) will find and configure any of these automatically.
 
 ## Available Tools
 
 | Tool | Description |
 |------|-------------|
-| `create_recipe` | Create a new recipe with all details |
-| `update_recipe` | Complete recipe update (all fields) |
-| `update_recipe_partial` | Update only specified fields |
-| `list_recipes` | List all recipes with ingredients and details |
+| `create_recipe` | Create new recipes with auto-generated images (default) |
+| `update_recipe` | Update any fields while preserving the rest |
+| `list_recipes` | List recipes with pagination, sorting, and filtering |
+| `read_recipe` | Get complete details for a single recipe |
+| `delete_recipe` | Move recipe to trash (requires confirmation) |
+| `search_recipes` | Search by text across all recipe fields |
+| `filter_recipes_by_ingredient` | Find recipes containing specific ingredients |
+| `filter_recipes_by_time` | Filter by prep time or cook time constraints |
+| `regenerate_recipe_image` | Generate new AI photos with custom styling |
 
-### Components
+## Advanced Features
 
-- **MCP Server** (`src/server.py`): Handles MCP protocol communication and tool routing
-- **Paprika Client** (`src/paprika_client.py`): Manages Paprika API authentication and operations
-- **Configuration** (`src/config.py`): Handles environment variables and CLI arguments
+### Brief Ingredients Pattern
+
+You can add quick ingredient lists to recipe descriptions so you don't have to dig through the measurements:
+
+```
+Ingredients: Spaghetti, Pancetta, Eggs, Parmesan, Pepper
+
+Classic Roman pasta with silky egg sauce and crispy pancetta.
+```
+
+Makes it way easier to check if you have everything before you start cooking.
+
+### Pagination and Sorting
+
+Got a ton of recipes? You can page through them and sort however you want:
+
+```
+Show me recipes 50-100 sorted by name
+List the next 20 recipes starting from position 40
+Sort recipes by prep time, quickest first
+```
+
+### Field Selection
+
+Don't need everything? Just ask for the fields you want:
+
+```
+Show just recipe names and UIDs
+List recipes but exclude directions and notes
+```
+
+### Mix it up
+
+You can combine all this stuff:
+
+```
+Find recipes with "chicken", sort by prep time, show first 10 with only name and ingredients
+```
+
+## When stuff breaks
+
+### Can't log in
+
+**Error: Authentication failed**
+- Make sure your login works at [paprikaapp.com](https://paprikaapp.com)
+- Cloud sync needs to be on in your Paprika app
+- Double-check you typed your credentials right in the config
+
+### Claude can't see the server
+
+**Connection issues**
+- Use full paths in the config (no `~/` shortcuts)
+- Point to your venv's Python: `/full/path/to/venv/bin/python`
+- Actually quit Claude Desktop (Cmd+Q on Mac) and reopen it
+
+**Import errors**
+- Activate your virtual environment: `source venv/bin/activate`
+- Reinstall everything: `pip install -r requirements.txt`
+
+### Image problems
+
+**No images showing up**
+- Check that `REPLICATE_API_TOKEN` is in your Claude Desktop config
+- Make sure your token works at [replicate.com/account](https://replicate.com/account)
+- Don't worry, your recipe still saves fine without the image
+
+**Images look wrong**
+- Try `regenerate_recipe_image` with better instructions
+- Be specific: "less sauce", "more garnish", "darker background"
+
+### Check the logs
+
+If something's really broken, look at the logs:
+- **macOS**: `~/Library/Logs/Claude/mcp*.log`
+- **Windows**: `%APPDATA%\Claude\Logs\mcp*.log`
 
 ## Development
 
-### Running Tests
-
+Run tests:
 ```bash
-# Install development dependencies
-pip install pytest pytest-asyncio
-
-# Run tests
 pytest tests/ -v
 ```
 
-### Adding New Features
-
-1. Create a feature branch: `git checkout -b feature/new-feature`
-2. Add your changes with tests
-3. Ensure all tests pass: `pytest`
-4. Format code: `black src/ tests/`
-5. Commit and push your changes
-
-## Troubleshooting
-
-### Common Issues
-
-#### Authentication Failed
-- Verify your Paprika credentials work at [paprikaapp.com](https://paprikaapp.com)
-- Ensure cloud sync is enabled in your Paprika app
-- Check that credentials are correctly set in environment variables
-
-#### Claude Connection Issues
-- Verify Python path in Claude config points to your virtual environment
-- Check that server.py path is absolute and correct
-- Ensure all required packages are installed in the virtual environment
-
-#### Import Errors
-- Confirm virtual environment is activated
-- Reinstall dependencies: `pip install -r requirements.txt`
-- Check Python version compatibility (3.8+)
-
-## API Rate Limiting
-
-The Paprika API enforces rate limiting to protect their service. When using this server it is advised to avoid making excessive or bulky requests in short periods of time.
+Format code:
+```bash
+ruff format src/ tests/
+```
 
 ## Contributing
 
-Contributions are welcome! Whether you want to report bugs, suggest new features, improve documentation, or submit code changes, your input helps make this project better. Feel free to open an issue for discussions or submit a pull request with your improvements.
+Want to help out? Cool. Open an issue to talk about changes or just submit a PR.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
-## Acknowledgments
+## Thanks to
 
-- [Anthropic](https://www.anthropic.com/) for the Model Context Protocol
-- [Paprika Recipe Manager](https://www.paprikaapp.com/) for the excellent recipe management app
-- The MCP community for documentation and examples
-
-## Changelog
-
-### v1.0.0 (2025-09-27)
-- Initial release
-- Recipe creation, updating, and listing functionality
-- Full and partial update capabilities
+- [Anthropic](https://www.anthropic.com/) for MCP and Claude
+- [Paprika Recipe Manager](https://www.paprikaapp.com/) for making a great recipe app
+- [Black Forest Lab](https://blackforestlabs.ai/) for the Flux image generation model
+- [Replicate](https://replicate.com) for hosting the AI models
 
 ---
 
-**Note**: This is an unofficial integration and is not affiliated with or endorsed by Paprika Recipe Manager or Anthropic.
+**Note**: This is just a side project, not officially affiliated with Paprika or Anthropic.
+
+**Questions?** [Open an issue](https://github.com/sandordaroczi/paprika-mcp-python-server/issues)
