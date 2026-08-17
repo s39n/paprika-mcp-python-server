@@ -533,6 +533,16 @@ async def main():
                         "required": ["menu_uid", "name"],
                     },
                 ),
+                Tool(
+                    name="list_pantry",
+                    description="List pantry items the household currently has on hand (from Paprika's Pantry tab). Read-only. Use to plan weeks around what is already in stock.",
+                    inputSchema={"type": "object", "properties": {}},
+                ),
+                Tool(
+                    name="list_groceries",
+                    description="List the current Paprika grocery/shopping list items. Read-only.",
+                    inputSchema={"type": "object", "properties": {}},
+                ),
             ]
 
         @server.call_tool()
@@ -1147,6 +1157,14 @@ async def main():
                         order_flag=arguments.get("order_flag", 0),
                     )
                     return [TextContent(type="text", text=f"Added '{item['name']}' to menu {item['menu_uid']} on day {item['day']} (uid {item['uid']}).")]
+
+                elif name == "list_pantry":
+                    items = await paprika_client.get_pantry()
+                    return [TextContent(type="text", text=f"Found {len(items)} pantry items:\n\n" + json.dumps(items, indent=2, ensure_ascii=False))]
+
+                elif name == "list_groceries":
+                    items = await paprika_client.get_groceries()
+                    return [TextContent(type="text", text=f"Found {len(items)} grocery items:\n\n" + json.dumps(items, indent=2, ensure_ascii=False))]
 
                 else:
                     return [TextContent(type="text", text=f"Unknown tool: {name}")]

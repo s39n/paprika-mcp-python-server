@@ -1153,6 +1153,22 @@ class PaprikaClient:
         logger.info(f"Added menu item '{name}' to menu {menu_uid}")
         return item
 
+    async def get_pantry(self) -> List[Dict[str, Any]]:
+        """Return pantry items (what the household has on hand)."""
+        try:
+            return await self._get_sync_entity("pantry")
+        except Exception as e:
+            logger.error(f"Failed to get pantry: {str(e)}")
+            raise PaprikaAPIError(f"Failed to get pantry: {str(e)}")
+
+    async def get_groceries(self) -> List[Dict[str, Any]]:
+        """Return the current grocery/shopping list items."""
+        try:
+            return await self._get_sync_entity("groceries")
+        except Exception as e:
+            logger.error(f"Failed to get groceries: {str(e)}")
+            raise PaprikaAPIError(f"Failed to get groceries: {str(e)}")
+
     async def close(self):
         """Close the HTTP session."""
         if self.session and not self.session.closed:
