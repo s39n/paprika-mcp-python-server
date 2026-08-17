@@ -1069,6 +1069,90 @@ class PaprikaClient:
             logger.error(f"Failed to get meals: {str(e)}")
             raise PaprikaAPIError(f"Failed to get meals: {str(e)}")
 
+    _DINNER_TYPE_UID_FALLBACK = "216713D08860CFA0D9787EA5C6CEBC8A8F5B73777F91C904853AC234BB9DF642"
+
+    async def _get_type_uid(self, meal_type_int: int):
+        """Return the account's type_uid for a meal type (0=bfast,1=lunch,2=dinner,3=snack). Scans existing meals once, cached."""
+        cache = getattr(self, "_type_uid_cache", None)
+        if cache is None:
+            cache = {}
+            try:
+                for m in await self._get_sync_entity("meals"):
+                    t, tu = m.get("type"), m.get("type_uid")
+                    if t is not None and tu and t not in cache:
+                        cache[t] = tu
+            except Exception as e:
+                logger.warning(f"Could not build type_uid cache: {str(e)}")
+            self._type_uid_cache = cache
+        if meal_type_int in cache:
+            return cache[meal_type_int]
+        return self._DINNER_TYPE_UID_FALLBACK if meal_type_int == 2 else None
+
+    async def create_meal(self, date: str, name: str, recipe_uid=None, meal_type: int = 2,
+                          type_uid=None, order_flag: int = 0, uid=None) -> Dict[str, Any]:
+        """Schedule a meal on the planner calendar. date 'YYYY-MM-DD' or full timestamp."""
+        if date and len(date) == 10:
+            date = f"{date} 00:00:00"
+        if type_uid is None:
+            type_uid = await self._get_type_uid(meal_type)
+        meal = {
+            "uid": uid or self._generate_uuid(),
+            "recipe_uid": recipe_uid or None,
+            "date": date,
+            "type": meal_type,
+            "name": name,
+            "order_flag": order_flag,
+            "type_uid": type_uid,
+            "scale": None,
+            "is_ingredient": False,
+        }
+        meal["hash"] = self._calculate_hash(meal)
+        data = aiohttp.FormData()
+        data.add_field("data", self._gzip_json(meal), content_type="application/octet-stream")
+        await self._make_authenticated_request("POST", f"/sync/meal/{meal['uid']}/", data=data)
+        logger.info(f"Scheduled meal '{name}' on {date}")
+        return meal
+
+    async def create_menu(self, name: str, notes: str = "", days: int = 7,
+                          order_flag: int = 0, uid=None) -> Dict[str, Any]:
+        """Create a new reusable Menu."""
+        menu = {
+            "uid": uid or self._generate_uuid(),
+            "name": name,
+            "notes": notes,
+            "order_flag": order_flag,
+            "days": days,
+        }
+        menu["hash"] = self._calculate_hash(menu)
+        data = aiohttp.FormData()
+        data.add_field("data", self._gzip_json(menu), content_type="application/octet-stream")
+        await self._make_authenticated_request("POST", f"/sync/menu/{menu['uid']}/", data=data)
+        logger.info(f"Created menu '{name}'")
+        return menu
+
+    async def create_menu_item(self, menu_uid: str, name: str, day: int = 1, recipe_uid=None,
+                               meal_type: int = 2, type_uid=None, order_flag: int = 0, uid=None) -> Dict[str, Any]:
+        """Add an item (recipe or free text) to a Menu on a given day."""
+        if type_uid is None:
+            type_uid = await self._get_type_uid(meal_type)
+        item = {
+            "uid": uid or self._generate_uuid(),
+            "name": name,
+            "order_flag": order_flag,
+            "recipe_uid": recipe_uid or None,
+            "menu_uid": menu_uid,
+            "type_uid": type_uid,
+            "day": day,
+            "scale": None,
+            "is_ingredient": False,
+        }
+        item["hash"] = self._calculate_hash(item)
+        data = aiohttp.FormData()
+        data.add_field("data", self._gzip_json(item), content_type="application/octet-stream")
+        await self._make_authenticated_request("POST", f"/sync/menuitem/{item['uid']}/", data=data)
+        logger.info(f"Added menu item '{name}' to menu {menu_uid}")
+        return item
+
     async def close(self):
         """Close the HTTP session."""
         if self.session and not self.session.closed:

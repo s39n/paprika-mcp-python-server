@@ -489,6 +489,50 @@ async def main():
                     description="List meals scheduled on the Paprika meal-planner calendar (dates + recipes). Read-only.",
                     inputSchema={"type": "object", "properties": {}},
                 ),
+                Tool(
+                    name="schedule_meal",
+                    description="Schedule a meal on the Paprika meal-planner calendar. WRITES to your live account (syncs to all devices). date is 'YYYY-MM-DD'. meal_type is breakfast/lunch/dinner/snack (default dinner). Optionally link a recipe via recipe_uid.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "date": {"type": "string", "description": "Calendar date, YYYY-MM-DD"},
+                            "name": {"type": "string", "description": "Meal name / label"},
+                            "recipe_uid": {"type": "string", "description": "Optional recipe UID to link"},
+                            "meal_type": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"], "default": "dinner"},
+                            "order_flag": {"type": "integer", "description": "Order within the day (0 = first)", "default": 0},
+                        },
+                        "required": ["date", "name"],
+                    },
+                ),
+                Tool(
+                    name="create_menu",
+                    description="Create a new reusable Menu (named meal-plan collection) in Paprika. WRITES to your live account.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "notes": {"type": "string", "default": ""},
+                            "days": {"type": "integer", "description": "Number of days the menu spans", "default": 7},
+                        },
+                        "required": ["name"],
+                    },
+                ),
+                Tool(
+                    name="add_menu_item",
+                    description="Add a recipe or free-text item to an existing Menu (by menu_uid) on a given day. WRITES to your live account.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "menu_uid": {"type": "string"},
+                            "name": {"type": "string"},
+                            "day": {"type": "integer", "default": 1},
+                            "recipe_uid": {"type": "string"},
+                            "meal_type": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"], "default": "dinner"},
+                            "order_flag": {"type": "integer", "default": 0},
+                        },
+                        "required": ["menu_uid", "name"],
+                    },
+                ),
             ]
 
         @server.call_tool()
@@ -1072,6 +1116,37 @@ async def main():
                 elif name == "list_planned_meals":
                     meals = await paprika_client.get_meals()
                     return [TextContent(type="text", text=f"Found {len(meals)} planned meals:\n\n" + json.dumps(meals, indent=2, ensure_ascii=False))]
+
+                elif name == "schedule_meal":
+                    mt = {"breakfast": 0, "lunch": 1, "dinner": 2, "snack": 3}.get(arguments.get("meal_type", "dinner"), 2)
+                    meal = await paprika_client.create_meal(
+                        date=arguments["date"],
+                        name=arguments["name"],
+                        recipe_uid=arguments.get("recipe_uid"),
+                        meal_type=mt,
+                        order_flag=arguments.get("order_flag", 0),
+                    )
+                    return [TextContent(type="text", text=f"Scheduled '{meal['name']}' on {meal['date']} (uid {meal['uid']}).")]
+
+                elif name == "create_menu":
+                    menu = await paprika_client.create_menu(
+                        name=arguments["name"],
+                        notes=arguments.get("notes", ""),
+                        days=arguments.get("days", 7),
+                    )
+                    return [TextContent(type="text", text=f"Created menu '{menu['name']}' (uid {menu['uid']}).")]
+
+                elif name == "add_menu_item":
+                    mt = {"breakfast": 0, "lunch": 1, "dinner": 2, "snack": 3}.get(arguments.get("meal_type", "dinner"), 2)
+                    item = await paprika_client.create_menu_item(
+                        menu_uid=arguments["menu_uid"],
+                        name=arguments["name"],
+                        day=arguments.get("day", 1),
+                        recipe_uid=arguments.get("recipe_uid"),
+                        meal_type=mt,
+                        order_flag=arguments.get("order_flag", 0),
+                    )
+                    return [TextContent(type="text", text=f"Added '{item['name']}' to menu {item['menu_uid']} on day {item['day']} (uid {item['uid']}).")]
 
                 else:
                     return [TextContent(type="text", text=f"Unknown tool: {name}")]
