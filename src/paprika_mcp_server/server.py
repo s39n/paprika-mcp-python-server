@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import re
 from typing import Any
@@ -472,6 +473,21 @@ async def main():
                             },
                         },
                     },
+                ),
+                Tool(
+                    name="list_menus",
+                    description="List all saved Menus (reusable meal-plan collections) from Paprika. Read-only.",
+                    inputSchema={"type": "object", "properties": {}},
+                ),
+                Tool(
+                    name="list_menu_items",
+                    description="List menu items (recipes assigned within menus). Optionally filter by menu_uid. Read-only.",
+                    inputSchema={"type": "object", "properties": {"menu_uid": {"type": "string", "description": "Optional: only items belonging to this menu UID"}}},
+                ),
+                Tool(
+                    name="list_planned_meals",
+                    description="List meals scheduled on the Paprika meal-planner calendar (dates + recipes). Read-only.",
+                    inputSchema={"type": "object", "properties": {}},
                 ),
             ]
 
@@ -1041,6 +1057,21 @@ async def main():
                         result_text += _format_recipe_summary(recipe) + "\n"
 
                     return [TextContent(type="text", text=result_text)]
+
+                elif name == "list_menus":
+                    menus = await paprika_client.get_menus()
+                    return [TextContent(type="text", text=f"Found {len(menus)} menus:\n\n" + json.dumps(menus, indent=2, ensure_ascii=False))]
+
+                elif name == "list_menu_items":
+                    items = await paprika_client.get_menu_items()
+                    menu_uid = arguments.get("menu_uid")
+                    if menu_uid:
+                        items = [it for it in items if it.get("menu_uid") == menu_uid or it.get("menu") == menu_uid]
+                    return [TextContent(type="text", text=f"Found {len(items)} menu items:\n\n" + json.dumps(items, indent=2, ensure_ascii=False))]
+
+                elif name == "list_planned_meals":
+                    meals = await paprika_client.get_meals()
+                    return [TextContent(type="text", text=f"Found {len(meals)} planned meals:\n\n" + json.dumps(meals, indent=2, ensure_ascii=False))]
 
                 else:
                     return [TextContent(type="text", text=f"Unknown tool: {name}")]

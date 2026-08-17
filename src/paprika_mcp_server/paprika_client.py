@@ -1039,6 +1039,36 @@ class PaprikaClient:
             logger.error(f"Failed to regenerate image for recipe {uid}: {str(e)}")
             raise PaprikaAPIError(f"Failed to regenerate image: {str(e)}")
 
+    async def _get_sync_entity(self, entity: str) -> List[Dict[str, Any]]:
+        """GET /sync/{entity}/ and return the 'result' list (read-only collections)."""
+        response = await self._make_authenticated_request("GET", f"/sync/{entity}/")
+        result = response.get("result", [])
+        return result or []
+
+    async def get_menus(self) -> List[Dict[str, Any]]:
+        """Return all saved Menus (reusable meal-plan collections)."""
+        try:
+            return await self._get_sync_entity("menus")
+        except Exception as e:
+            logger.error(f"Failed to get menus: {str(e)}")
+            raise PaprikaAPIError(f"Failed to get menus: {str(e)}")
+
+    async def get_menu_items(self) -> List[Dict[str, Any]]:
+        """Return all menu items (recipes assigned within menus)."""
+        try:
+            return await self._get_sync_entity("menuitems")
+        except Exception as e:
+            logger.error(f"Failed to get menu items: {str(e)}")
+            raise PaprikaAPIError(f"Failed to get menu items: {str(e)}")
+
+    async def get_meals(self) -> List[Dict[str, Any]]:
+        """Return all meals scheduled on the meal-planner calendar."""
+        try:
+            return await self._get_sync_entity("meals")
+        except Exception as e:
+            logger.error(f"Failed to get meals: {str(e)}")
+            raise PaprikaAPIError(f"Failed to get meals: {str(e)}")
+
     async def close(self):
         """Close the HTTP session."""
         if self.session and not self.session.closed:
