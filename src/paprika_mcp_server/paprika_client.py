@@ -1108,8 +1108,8 @@ class PaprikaClient:
         }
         meal["hash"] = self._calculate_hash(meal)
         data = aiohttp.FormData()
-        data.add_field("data", self._gzip_json(meal), content_type="application/octet-stream")
-        await self._make_authenticated_request("POST", f"/sync/meal/{meal['uid']}/", data=data)
+        data.add_field("data", self._gzip_json([meal]), content_type="application/octet-stream")
+        await self._make_authenticated_request("POST", "/sync/meals/", data=data)
         logger.info(f"Scheduled meal '{name}' on {date}")
         return meal
 
@@ -1125,8 +1125,8 @@ class PaprikaClient:
         }
         menu["hash"] = self._calculate_hash(menu)
         data = aiohttp.FormData()
-        data.add_field("data", self._gzip_json(menu), content_type="application/octet-stream")
-        await self._make_authenticated_request("POST", f"/sync/menu/{menu['uid']}/", data=data)
+        data.add_field("data", self._gzip_json([menu]), content_type="application/octet-stream")
+        await self._make_authenticated_request("POST", "/sync/menus/", data=data)
         logger.info(f"Created menu '{name}'")
         return menu
 
@@ -1148,8 +1148,8 @@ class PaprikaClient:
         }
         item["hash"] = self._calculate_hash(item)
         data = aiohttp.FormData()
-        data.add_field("data", self._gzip_json(item), content_type="application/octet-stream")
-        await self._make_authenticated_request("POST", f"/sync/menuitem/{item['uid']}/", data=data)
+        data.add_field("data", self._gzip_json([item]), content_type="application/octet-stream")
+        await self._make_authenticated_request("POST", "/sync/menuitems/", data=data)
         logger.info(f"Added menu item '{name}' to menu {menu_uid}")
         return item
 
